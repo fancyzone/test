@@ -508,7 +508,7 @@ namespace 施工定额
         }
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            MessageBox.Show("Content被点击");
+            //MessageBox.Show("Content被点击");
         }
 
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
