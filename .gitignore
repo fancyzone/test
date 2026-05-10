@@ -359,3 +359,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/施工定额/bin/Debug/net8.0-windows
+/施工定额/bin/Debug/net8.0-windows
+施工定额/bin/Debug/net8.0-windows/施工定额.exe
