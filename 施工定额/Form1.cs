@@ -7,7 +7,7 @@ namespace 施工定额
 {
     public partial class Form1 : Form
     {
-        public class QingdanDingeXiaohaoliang //主要类，包含清单、定额、消耗量
+        public class QingdanDingeXiaohaoliang //主要类，包含清单、定额、消耗量，用于计算综合单价
         {
             public Qingdan qingdan { get; set; } = new Qingdan();
             public List<Dinge> dinge { get; set; } = new List<Dinge>();
