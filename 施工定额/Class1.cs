@@ -14,7 +14,14 @@
                 // 找到该消耗量对应的定额，获取定额工程量
                 var parentDinge = dinge.FirstOrDefault(d => d.ID号 == x.ID号);
                 decimal dAmount = parentDinge?.定额工程量 ?? 0;
-
+                if (this.qingdan.工程量 != 0)
+                {
+                    this.qingdan.综合单价 = this.qingdan.综合合价 / this.qingdan.工程量;
+                }
+                else
+                {
+                    this.qingdan.综合单价 = 0;
+                }
                 x.数量 = x.含量 * dAmount;
                 x.市场价合计 = x.数量 * x.市场价;
             }

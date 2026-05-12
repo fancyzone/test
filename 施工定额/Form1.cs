@@ -461,6 +461,8 @@ namespace 施工定额
                 {
                     ID号 = row.Cells["ID号"].Value?.ToString(),
                     定额编码 = row.Cells["定额编码"].Value?.ToString(),
+                    定额名称 = row.Cells["定额名称"].Value?.ToString(),
+                    定额单位 = row.Cells["定额单位"].Value?.ToString(),
                     定额工程量 = Convert.ToDecimal(row.Cells["定额工程量"].Value ?? 0),
                     定额单价 = Convert.ToDecimal(row.Cells["定额单价"].Value ?? 0),
                     定额合价 = Convert.ToDecimal(row.Cells["定额合价"].Value ?? 0)
@@ -473,10 +475,18 @@ namespace 施工定额
                 model.xiaohaoliang.Add(new Xiaohaoliang
                 {
                     ID号 = row.Cells["ID号"].Value?.ToString(),
+                    清单编码 = row.Cells["清单编码"].Value?.ToString(),
+                    定额编码 = row.Cells["定额编码"].Value?.ToString(),
+                    消耗量类别 = row.Cells["消耗量类别"].Value?.ToString(),
+                    消耗量编码 = row.Cells["消耗量编码"].Value?.ToString(),
+                    消耗量名称 = row.Cells["消耗量名称"].Value?.ToString(),
+                    //规格型号 = row.Cells["规格型号"].Value?.ToString(),
+                    消耗量单位 = row.Cells["消耗量单位"].Value?.ToString(),
                     含量 = Convert.ToDecimal(row.Cells["含量"].Value ?? 0),
                     数量 = Convert.ToDecimal(row.Cells["数量"].Value ?? 0),
                     定额基价 = Convert.ToDecimal(row.Cells["定额基价"].Value ?? 0),
-                    市场价 = Convert.ToDecimal(row.Cells["市场价"].Value ?? 0)                    
+                    市场价 = Convert.ToDecimal(row.Cells["市场价"].Value ?? 0),
+                    市场价合计 = Convert.ToDecimal(row.Cells["市场价合计"].Value ?? 0)
                 });
             }
             return model;
@@ -530,7 +540,7 @@ namespace 施工定额
                 dataGridView4.Rows.Add("规费");
                 dataGridView4.Rows.Add("增值税");
                 dataGridView4.Rows.Add("工程造价");
-                float 不含税工程造价 = 0.0f;
+                decimal 不含税工程造价 = 0.0M;
                 try
                 {
                     string connectionString = "Data Source=userDB.db;Version=3;";
@@ -555,7 +565,7 @@ namespace 施工定额
                             dataGridView4.Columns.Add("Column1", "Column 1");
                             dataGridView4.Columns.Add("Column2", "Column 2");
                         }
-                        不含税工程造价 += Convert.ToSingle(result);
+                        不含税工程造价 += Convert.ToDecimal(result);
                         // 将结果赋值给第一行第二列
                         dataGridView4.Rows[0].Cells[1].Value = result;
                     }
@@ -569,8 +579,8 @@ namespace 施工定额
                     MessageBox.Show("连接数据库时出错: " + ex.Message);
                 }
 
-                float 增值税 = 不含税工程造价 * 0.09f;
-                float 工程造价 = 不含税工程造价 + 增值税;
+                decimal 增值税 = 不含税工程造价 * 0.09M;
+                decimal 工程造价 = 不含税工程造价 + 增值税;
                 dataGridView4.Rows[4].Cells[1].Value = 增值税.ToString("F2");
                 dataGridView4.Rows[5].Cells[1].Value = 工程造价.ToString("F2");
             }
