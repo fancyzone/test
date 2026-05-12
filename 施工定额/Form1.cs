@@ -1,5 +1,6 @@
 using System.Data;
 using System.Data.Common;
+using System.Data.Entity.Core.Common.CommandTrees.ExpressionBuilder;
 using System.Data.SQLite;
 using static 施工定额.Program;
 
@@ -290,7 +291,6 @@ namespace 施工定额
         private QingdanDingeXiaohaoliang GetCurrentModel()
         {
             QingdanDingeXiaohaoliang model = new QingdanDingeXiaohaoliang();
-
             // 1. 从 DataGridView 读取清单数据（假设取当前选中的那一行）
             if (dataGridView1.CurrentRow != null)
             {
@@ -475,7 +475,7 @@ namespace 施工定额
             var model = GetCurrentModel();
 
             // 2. 调用模型自带的计算逻辑（对象自己算自己）
-            model.Calculate();
+            model.Calculate(ValueStorage.SharedValue3);
 
             // 3. 保存回数据库（你可以直接把整个 model 传给 UpdateDatabase）
             UpdateDatabase(model);
@@ -491,7 +491,7 @@ namespace 施工定额
             var model = GetCurrentModel();
 
             // 2. 调用模型自带的计算逻辑（对象自己算自己）
-            model.Calculate();
+            model.Calculate(ValueStorage.SharedValue3);
 
             // 3. 保存回数据库（你可以直接把整个 model 传给 UpdateDatabase）
             UpdateDatabase(model);

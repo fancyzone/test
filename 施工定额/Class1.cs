@@ -6,35 +6,35 @@
         public List<Dinge> dinge { get; set; } = new List<Dinge>();
         public List<Xiaohaoliang> xiaohaoliang { get; set; } = new List<Xiaohaoliang>();
         // 【核心优化】：定义一个统一的计算方法
-        public void Calculate()
+        public void Calculate(string currentDingeID = null)
         {
-            // 1. 计算所有消耗量的合价
+            // 1. 计算消耗量层级
             foreach (var x in xiaohaoliang)
             {
-                // 找到该消耗量对应的定额，获取定额工程量
-                var parentDinge = dinge.FirstOrDefault(d => d.ID号 == x.ID号);
-                decimal dAmount = parentDinge?.定额工程量 ?? 0;
-                if (this.qingdan.工程量 != 0)
+                // 找到该消耗量对应的定额
+                var parentDg = dinge.FirstOrDefault(d => d.ID号 == x.ID号);
+                if (parentDg != null)
                 {
-                    this.qingdan.综合单价 = this.qingdan.综合合价 / this.qingdan.工程量;
+                    // 核心公式：消耗量数量 = 含量 * 定额工程量
+                    x.数量 = x.含量 * parentDg.定额工程量;
+                    x.市场价合计 = x.数量 * x.市场价;
                 }
-                else
-                {
-                    this.qingdan.综合单价 = 0;
-                }
-                x.数量 = x.含量 * dAmount;
-                x.市场价合计 = x.数量 * x.市场价;
             }
 
-            // 2. 计算定额的合价与单价
+            // 2. 计算定额层级
             foreach (var d in dinge)
             {
-                d.定额合价 = xiaohaoliang.Where(x => x.ID号 == d.ID号).Sum(x => x.市场价合计);
-                if (d.定额工程量 != 0)
-                    d.定额单价 = d.定额合价 / d.定额工程量;
+                // 如果传了 ID，我们只更新那一个匹配的（为了防止你提到的清零问题）
+                // 如果没传 ID（为 null），我们就全量重算所有定额（适用于清单工程量改变的情况）
+                if (currentDingeID == null || d.ID号 == currentDingeID)
+                {
+                    d.定额合价 = xiaohaoliang.Where(x => x.ID号 == d.ID号).Sum(x => x.市场价合计);
+                    if (d.定额工程量 != 0)
+                        d.定额单价 = d.定额合价 / d.定额工程量;
+                }
             }
 
-            // 3. 计算清单的合价与单价
+            // 3. 计算清单层级
             qingdan.综合合价 = dinge.Sum(d => d.定额合价);
             if (qingdan.工程量 != 0)
                 qingdan.综合单价 = qingdan.综合合价 / qingdan.工程量;
