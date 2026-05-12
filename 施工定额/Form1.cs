@@ -152,6 +152,7 @@ namespace 施工定额
         private void dataGridView1_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
             QingdanDingeXiaohaoliang qingdanDingeXiaohaoliang = QingdansDingeXiaohaoliang(dataGridView1.Rows[e.RowIndex].Cells["清单编码"].Value.ToString(), sender, e);
+
             UpdateDatabase(qingdanDingeXiaohaoliang);
             UpdateDisplay("qingdan");
             UpdateDisplay("dinge");
@@ -435,6 +436,51 @@ namespace 施工定额
 
             return result;
         }
+
+        private QingdanDingeXiaohaoliang GetCurrentModel()
+        {
+            QingdanDingeXiaohaoliang model = new QingdanDingeXiaohaoliang();
+
+            // 1. 从 DataGridView 读取清单数据（假设取当前选中的那一行）
+            if (dataGridView1.CurrentRow != null)
+            {
+                var row = dataGridView1.CurrentRow;
+                model.qingdan.清单编码 = row.Cells["清单编码"].Value?.ToString();
+                model.qingdan.清单名称 = row.Cells["清单名称"].Value?.ToString();
+                model.qingdan.项目特征 = row.Cells["项目特征"].Value?.ToString();
+                model.qingdan.单位 = row.Cells["单位"].Value?.ToString();
+                model.qingdan.工程量 = Convert.ToDecimal(row.Cells["工程量"].Value ?? 0);
+                model.qingdan.综合单价 = Convert.ToDecimal(row.Cells["综合单价"].Value ?? 0);
+                model.qingdan.综合合价 = Convert.ToDecimal(row.Cells["综合合价"].Value ?? 0);
+            }
+            // 2. 从 DataGridView 读取定额列表
+            foreach (DataGridViewRow row in DataGridView_dinge.Rows)
+            {
+                if (row.IsNewRow) continue;
+                model.dinge.Add(new Dinge
+                {
+                    ID号 = row.Cells["ID号"].Value?.ToString(),
+                    定额编码 = row.Cells["定额编码"].Value?.ToString(),
+                    定额工程量 = Convert.ToDecimal(row.Cells["定额工程量"].Value ?? 0),
+                    定额单价 = Convert.ToDecimal(row.Cells["定额单价"].Value ?? 0),
+                    定额合价 = Convert.ToDecimal(row.Cells["定额合价"].Value ?? 0)
+                });
+            }
+            // 3. 从 DataGridView 读取消耗量列表
+            foreach (DataGridViewRow row in dataGridView2.Rows)
+            {
+                if (row.IsNewRow) continue;
+                model.xiaohaoliang.Add(new Xiaohaoliang
+                {
+                    ID号 = row.Cells["ID号"].Value?.ToString(),
+                    含量 = Convert.ToDecimal(row.Cells["含量"].Value ?? 0),
+                    数量 = Convert.ToDecimal(row.Cells["数量"].Value ?? 0),
+                    定额基价 = Convert.ToDecimal(row.Cells["定额基价"].Value ?? 0),
+                    市场价 = Convert.ToDecimal(row.Cells["市场价"].Value ?? 0)                    
+                });
+            }
+            return model;
+        }
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
             //MessageBox.Show("Content被点击");
@@ -565,8 +611,15 @@ namespace 施工定额
 
         private void dataGridView2_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
-            QingdanDingeXiaohaoliang qingdanDingeXiaohaoliang = QingdansDingeXiaohaoliang(ValueStorage.SharedValue, sender, e);
-            UpdateDatabase(qingdanDingeXiaohaoliang);
+            // 1. 获取当前所有数据（模型化）
+            var model = GetCurrentModel();
+
+            // 2. 调用模型自带的计算逻辑（对象自己算自己）
+            model.Calculate();
+
+            // 3. 保存回数据库（你可以直接把整个 model 传给 UpdateDatabase）
+            UpdateDatabase(model);
+
             UpdateDisplay("qingdan");
             UpdateDisplay("dinge");
             UpdateDisplay("xiaohaoliang");
