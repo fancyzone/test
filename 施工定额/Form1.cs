@@ -11,7 +11,6 @@ namespace 施工定额
         {
             InitializeComponent();
         }
-
         private void Form1_Load(object sender, EventArgs e)
         {
             // 全局启用换行

@@ -6,7 +6,7 @@
         public List<Dinge> dinge { get; set; } = new List<Dinge>();
         public List<Xiaohaoliang> xiaohaoliang { get; set; } = new List<Xiaohaoliang>();
     }
-    public class Qingdan//
+    public class Qingdan
     {
         public string 清单编码 { get; set; }
         public string 清单名称 { get; set; }
