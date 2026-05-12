@@ -7,76 +7,6 @@ namespace 施工定额
 {
     public partial class Form1 : Form
     {
-        public class QingdanDingeXiaohaoliang //主要类，包含清单、定额、消耗量，主要用于计算综合单价
-        {
-            public Qingdan qingdan { get; set; } = new Qingdan();
-            public List<Dinge> dinge { get; set; } = new List<Dinge>();
-            public List<Xiaohaoliang> xiaohaoliang { get; set; } = new List<Xiaohaoliang>();
-        }
-        public class Qingdan
-        {
-            public string 清单编码 { get; set; }
-            public string 清单名称 { get; set; }
-            public string 项目特征 { get; set; }
-            public string 单位 { get; set; }
-            public float 工程量 { get; set; }
-            public float 综合单价 { get; set; }
-            public float 综合合价 { get; set; }
-            public int Level { get; set; }
-            public override string ToString()
-            {
-                return $"{清单编码} - {清单名称} - {项目特征} - {单位} - {工程量} - {综合单价} - {综合合价} - {Level}";
-            }
-            public class Xiaohaoliang
-            {
-                public string 消耗量编码 { get; set; }
-                public string 消耗量名称 { get; set; }
-                public string 规格型号 { get; set; }
-                public string 单位 { get; set; }
-                public float 数量 { get; set; }
-                public float 单价 { get; set; }
-                public float 合价 { get; set; }
-                public override string ToString()
-                {
-                    return $"{消耗量编码} - {消耗量名称} - {规格型号} - {单位} - {数量} - {单价} - {合价}";
-                }
-            }
-        }
-
-        public class Dinge
-        {
-            public string ID号 { get; set; }
-            public string 定额编码 { get; set; }
-            public string 定额名称 { get; set; }
-            public string 定额单位 { get; set; }
-            public float 定额工程量 { get; set; }
-            public float 定额单价 { get; set; }
-            public float 定额合价 { get; set; }
-            public override string ToString()
-            {
-                return $"{ID号} - {定额编码} - {定额名称} - {定额工程量} - {定额单价} - {定额合价}";
-            }
-        }
-        public class Xiaohaoliang
-        {
-            public string ID号 { get; set; }
-            public string 清单编码 { get; set; }
-            public string 定额编码 { get; set; }
-            public string 消耗量类别 { get; set; }
-            public string 消耗量编码 { get; set; }
-            public string 消耗量名称 { get; set; }
-            public string 规格型号 { get; set; }
-            public string 消耗量单位 { get; set; }
-            public float 含量 { get; set; }
-            public float 数量 { get; set; }
-            public float 定额基价 { get; set; }
-            public float 市场价 { get; set; }
-            public float 市场价合计 { get; set; }
-            public override string ToString()
-            {
-                return $"{消耗量类别} - {消耗量编码} - {消耗量名称} - {规格型号} - {消耗量单位} - {含量} - {数量} - {定额基价} - {市场价} - {市场价合计}";
-            }
-        }
         public Form1()
         {
             InitializeComponent();
@@ -334,9 +264,9 @@ namespace 施工定额
                                     清单名称 = reader["清单名称"].ToString(),
                                     项目特征 = reader["项目特征"].ToString(),
                                     单位 = reader["单位"].ToString(),
-                                    工程量 = Convert.ToSingle(reader["工程量"]),
-                                    综合单价 = Convert.ToSingle(reader["综合单价"]),
-                                    综合合价 = Convert.ToSingle(reader["综合合价"]),
+                                    工程量 = Convert.ToDecimal(reader["工程量"]),
+                                    综合单价 = Convert.ToDecimal(reader["综合单价"]),
+                                    综合合价 = Convert.ToDecimal(reader["综合合价"]),
                                     Level = Convert.ToInt32(reader["Level"])
                                 };
                                 qingdanList.Add(qingdan);
@@ -378,9 +308,9 @@ namespace 施工定额
                                     清单名称 = reader["清单名称"].ToString(),
                                     项目特征 = reader["项目特征"].ToString(),
                                     单位 = reader["单位"].ToString(),
-                                    工程量 = Convert.ToSingle(reader["工程量"]),
-                                    综合单价 = Convert.ToSingle(reader["综合单价"]),
-                                    综合合价 = Convert.ToSingle(reader["综合合价"]),
+                                    工程量 = Convert.ToDecimal(reader["工程量"]),
+                                    综合单价 = Convert.ToDecimal(reader["综合单价"]),
+                                    综合合价 = Convert.ToDecimal(reader["综合合价"]),
                                     Level = Convert.ToInt32(reader["Level"])
                                 };
                                 qingdanList.Add(qingdan1);
@@ -400,7 +330,7 @@ namespace 施工定额
             // 方式1：通过 控件Name 属性判断（最常用，推荐）
             if (currentDgv.Name == "dataGridView1")
             {
-                result.qingdan.工程量 = Convert.ToSingle(dataGridView1.Rows[e.RowIndex].Cells["工程量"].Value);
+                result.qingdan.工程量 = Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["工程量"].Value);
             }
 
             //对定额对象进行赋值
@@ -422,7 +352,7 @@ namespace 施工定额
                 //定额工程量
                 if (row.Cells["定额工程量"].Value != DBNull.Value)
                 {
-                    item.定额工程量 = Convert.ToSingle(row.Cells["定额工程量"].Value);
+                    item.定额工程量 = Convert.ToDecimal(row.Cells["定额工程量"].Value);
                 }
                 //定额单价
                 if (row.Cells["定额单价"].Value != DBNull.Value)
@@ -432,7 +362,7 @@ namespace 施工定额
                 //定额合价
                 if (row.Cells["定额合价"].Value != DBNull.Value)
                 {
-                    item.定额合价 = Convert.ToSingle(row.Cells["定额合价"].Value);
+                    item.定额合价 = Convert.ToDecimal(row.Cells["定额合价"].Value);
                 }
                 //将对象添加到List
                 result.dinge.Add(item);
@@ -473,19 +403,19 @@ namespace 施工定额
                 //含量
                 if (row.Cells["含量"].Value != DBNull.Value)
                 {
-                    item.含量 = Convert.ToSingle(row.Cells["含量"].Value);
+                    item.含量 = Convert.ToDecimal(row.Cells["含量"].Value);
                 }
                 //数量
-                item.数量 = item.含量 * Convert.ToSingle(result.dinge.FirstOrDefault(p => p.ID号 == item.ID号)?.定额工程量);
+                item.数量 = item.含量 * Convert.ToDecimal(result.dinge.FirstOrDefault(p => p.ID号 == item.ID号)?.定额工程量);
                 //定额基价
                 if (row.Cells["定额基价"].Value != DBNull.Value)
                 {
-                    item.定额基价 = Convert.ToSingle(row.Cells["定额基价"].Value);
+                    item.定额基价 = Convert.ToDecimal(row.Cells["定额基价"].Value);
                 }
                 //市场价
                 if (row.Cells["市场价"].Value != DBNull.Value)
                 {
-                    item.市场价 = Convert.ToSingle(row.Cells["市场价"].Value);
+                    item.市场价 = Convert.ToDecimal(row.Cells["市场价"].Value);
                 }
                 //市场价合计
                 item.市场价合计 = item.市场价 * item.数量;
@@ -496,7 +426,7 @@ namespace 施工定额
                 result.dinge.FirstOrDefault(p => p.ID号 == item.ID号).定额合价 += item.市场价合计;
             }
             //计算清单综合合价、定额综合单价
-            result.qingdan.综合合价 = 0.0f;
+            result.qingdan.综合合价 = 0.0M;
             foreach (Dinge dinge in result.dinge)
             {
                 dinge.定额单价 = dinge.定额合价 / dinge.定额工程量;
