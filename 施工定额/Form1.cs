@@ -151,9 +151,15 @@ namespace 施工定额
 
         private void dataGridView1_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
-            QingdanDingeXiaohaoliang qingdanDingeXiaohaoliang = QingdansDingeXiaohaoliang(dataGridView1.Rows[e.RowIndex].Cells["清单编码"].Value.ToString(), sender, e);
+            // 1. 获取当前所有数据（模型化）
+            var model = GetCurrentModel();
 
-            UpdateDatabase(qingdanDingeXiaohaoliang);
+            // 2. 调用模型自带的计算逻辑（对象自己算自己）
+            model.Calculate();
+
+            // 3. 保存回数据库（你可以直接把整个 model 传给 UpdateDatabase）
+            UpdateDatabase(model);
+
             UpdateDisplay("qingdan");
             UpdateDisplay("dinge");
             UpdateDisplay("xiaohaoliang");
@@ -281,162 +287,6 @@ namespace 施工定额
             }
             return qingdanList;
         }
-
-        //清单定额消耗量
-        private QingdanDingeXiaohaoliang QingdansDingeXiaohaoliang(string QingdanBianma, object sender, DataGridViewCellEventArgs e)
-        {
-            QingdanDingeXiaohaoliang result = new QingdanDingeXiaohaoliang();
-            //对清单对象进行赋值
-            List<Qingdan> qingdanList = new List<Qingdan>();
-            string connectionString = "Data Source=userDB.db;Version=3;";
-            try
-            {
-                using (SQLiteConnection conn = new SQLiteConnection(connectionString))
-                {
-                    conn.Open();
-                    string querySql = "SELECT 清单编码,清单名称,项目特征,单位,工程量,综合单价,综合合价,Level FROM 清单";
-                    using (SQLiteCommand cmd = new SQLiteCommand(querySql, conn))
-                    {
-                        using (SQLiteDataReader reader = cmd.ExecuteReader())
-                        {
-                            // 遍历查询结果，封装成User对象
-                            while (reader.Read())
-                            {
-                                Qingdan qingdan1 = new Qingdan
-                                {
-                                    清单编码 = reader["清单编码"].ToString(),
-                                    清单名称 = reader["清单名称"].ToString(),
-                                    项目特征 = reader["项目特征"].ToString(),
-                                    单位 = reader["单位"].ToString(),
-                                    工程量 = Convert.ToDecimal(reader["工程量"]),
-                                    综合单价 = Convert.ToDecimal(reader["综合单价"]),
-                                    综合合价 = Convert.ToDecimal(reader["综合合价"]),
-                                    Level = Convert.ToInt32(reader["Level"])
-                                };
-                                qingdanList.Add(qingdan1);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"读取数据失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            result.qingdan = qingdanList.Find(q => q.清单编码 == QingdanBianma);
-
-            // 核心：将sender强转为DataGridView，得到【被点击的那个DataGridView】
-            DataGridView currentDgv = sender as DataGridView;
-            // 方式1：通过 控件Name 属性判断（最常用，推荐）
-            if (currentDgv.Name == "dataGridView1")
-            {
-                result.qingdan.工程量 = Convert.ToDecimal(dataGridView1.Rows[e.RowIndex].Cells["工程量"].Value);
-            }
-
-            //对定额对象进行赋值
-            foreach (DataGridViewRow row in DataGridView_dinge.Rows)
-            {
-                // 跳过“新行”（DataGridView默认最后一行是空白新行）
-                if (row.IsNewRow) continue;
-                // 创建实体类对象
-                Dinge item = new Dinge();
-                // 读取单元格值并赋值（注意处理空值）
-                //ID号
-                item.ID号 = row.Cells["ID号"].Value?.ToString() ?? string.Empty;
-                //定额编码
-                item.定额编码 = row.Cells["定额编码"].Value?.ToString() ?? string.Empty;
-                //定额名称
-                item.定额名称 = row.Cells["定额名称"].Value?.ToString() ?? string.Empty;
-                //定额单位
-                item.定额单位 = row.Cells["定额单位"].Value?.ToString() ?? string.Empty;
-                //定额工程量
-                if (row.Cells["定额工程量"].Value != DBNull.Value)
-                {
-                    item.定额工程量 = Convert.ToDecimal(row.Cells["定额工程量"].Value);
-                }
-                //定额单价
-                if (row.Cells["定额单价"].Value != DBNull.Value)
-                {
-                    item.定额单价 = item.定额单价;
-                }
-                //定额合价
-                if (row.Cells["定额合价"].Value != DBNull.Value)
-                {
-                    item.定额合价 = Convert.ToDecimal(row.Cells["定额合价"].Value);
-                }
-                //将对象添加到List
-                result.dinge.Add(item);
-            }
-            /*
-            dinge.定额工程量 = qingdan.工程量;
-            if (dinge.定额单位.Contains("10"))
-            {
-                dinge.定额工程量 = Convert.ToSingle(qingdan.工程量 * 0.1);
-            }
-            */
-
-            //对消耗量对象进行赋值
-            foreach (DataGridViewRow row in dataGridView2.Rows)
-            {
-                // 跳过“新行”（DataGridView默认最后一行是空白新行）
-                if (row.IsNewRow) continue;
-                // 创建实体类对象
-                Xiaohaoliang item = new Xiaohaoliang();
-                // 读取单元格值并赋值（注意处理空值）
-                //清单编码
-                item.清单编码 = row.Cells["清单编码"].Value?.ToString() ?? string.Empty;
-                //定额编码
-                item.定额编码 = row.Cells["定额编码"].Value?.ToString() ?? string.Empty;
-                //ID号
-                item.ID号 = row.Cells["ID号"].Value?.ToString() ?? string.Empty;
-                //消耗量类别
-                item.消耗量类别 = row.Cells["消耗量类别"].Value?.ToString() ?? string.Empty;
-                //消耗量编码
-                item.消耗量编码 = row.Cells["消耗量编码"].Value?.ToString() ?? string.Empty;
-                //消耗量名称
-                item.消耗量名称 = row.Cells["消耗量名称"].Value?.ToString() ?? string.Empty;
-                //规格型号
-                //item.规格型号 = row.Cells["规格型号"].Value?.ToString() ?? string.Empty;
-                //消耗量单位
-                item.消耗量单位 = row.Cells["消耗量单位"].Value?.ToString() ?? string.Empty;
-
-                //含量
-                if (row.Cells["含量"].Value != DBNull.Value)
-                {
-                    item.含量 = Convert.ToDecimal(row.Cells["含量"].Value);
-                }
-                //数量
-                item.数量 = item.含量 * Convert.ToDecimal(result.dinge.FirstOrDefault(p => p.ID号 == item.ID号)?.定额工程量);
-                //定额基价
-                if (row.Cells["定额基价"].Value != DBNull.Value)
-                {
-                    item.定额基价 = Convert.ToDecimal(row.Cells["定额基价"].Value);
-                }
-                //市场价
-                if (row.Cells["市场价"].Value != DBNull.Value)
-                {
-                    item.市场价 = Convert.ToDecimal(row.Cells["市场价"].Value);
-                }
-                //市场价合计
-                item.市场价合计 = item.市场价 * item.数量;
-                //将对象添加到List
-                result.xiaohaoliang.Add(item);
-
-                //计算定额综合合价
-                result.dinge.FirstOrDefault(p => p.ID号 == item.ID号).定额合价 += item.市场价合计;
-            }
-            //计算清单综合合价、定额综合单价
-            result.qingdan.综合合价 = 0.0M;
-            foreach (Dinge dinge in result.dinge)
-            {
-                dinge.定额单价 = dinge.定额合价 / dinge.定额工程量;
-                result.qingdan.综合合价 += dinge.定额合价;
-            }
-            result.qingdan.综合单价 = result.qingdan.综合合价 / result.qingdan.工程量;
-
-            return result;
-        }
-
         private QingdanDingeXiaohaoliang GetCurrentModel()
         {
             QingdanDingeXiaohaoliang model = new QingdanDingeXiaohaoliang();
@@ -637,8 +487,14 @@ namespace 施工定额
 
         private void DataGridView_dinge_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
-            QingdanDingeXiaohaoliang qingdanDingeXiaohaoliang = QingdansDingeXiaohaoliang(ValueStorage.SharedValue, sender, e);
-            UpdateDatabase(qingdanDingeXiaohaoliang);
+            // 1. 获取当前所有数据（模型化）
+            var model = GetCurrentModel();
+
+            // 2. 调用模型自带的计算逻辑（对象自己算自己）
+            model.Calculate();
+
+            // 3. 保存回数据库（你可以直接把整个 model 传给 UpdateDatabase）
+            UpdateDatabase(model);
             UpdateDisplay("qingdan");
             UpdateDisplay("dinge");
             UpdateDisplay("xiaohaoliang");
