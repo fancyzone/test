@@ -5,39 +5,49 @@
         public Qingdan qingdan { get; set; } = new Qingdan();
         public List<Dinge> dinge { get; set; } = new List<Dinge>();
         public List<Xiaohaoliang> xiaohaoliang { get; set; } = new List<Xiaohaoliang>();
-        // 【核心优化】：定义一个统一的计算方法
+        //核心：定义一个统一的计算方法
         public void Calculate(string currentDingeID = null)
         {
-            // 1. 计算消耗量层级
+            // 1. 底层：根据定额工程量，计算所有消耗量的数量和合价
             foreach (var x in xiaohaoliang)
             {
-                // 找到该消耗量对应的定额
+                // 通过 ID号 建立消耗量与定额的隶属关系
                 var parentDg = dinge.FirstOrDefault(d => d.ID号 == x.ID号);
                 if (parentDg != null)
                 {
-                    // 核心公式：消耗量数量 = 含量 * 定额工程量
-                    x.数量 = x.含量 * parentDg.定额工程量;
-                    x.市场价合计 = x.数量 * x.市场价;
+                    // 数量 = 含量 * 定额工程量
+                    x.Calculate(parentDg.定额工程量);
                 }
             }
 
-            // 2. 计算定额层级
+            // 2. 中层：汇总消耗量到各自对应的定额
             foreach (var d in dinge)
             {
-                // 如果传了 ID，我们只更新那一个匹配的（为了防止你提到的清零问题）
-                // 如果没传 ID（为 null），我们就全量重算所有定额（适用于清单工程量改变的情况）
+                // 支持局部更新：如果指定了 ID 则只算该定额，否则全量重算
                 if (currentDingeID == null || d.ID号 == currentDingeID)
                 {
-                    d.定额合价 = xiaohaoliang.Where(x => x.ID号 == d.ID号).Sum(x => x.市场价合计);
+                    // 将该定额下所有消耗量的“市场价合计”累加
+                    d.定额合价 = xiaohaoliang
+                        .Where(x => x.ID号 == d.ID号)
+                        .Sum(x => x.市场价合计);
+
+                    // 更新定额单价
                     if (d.定额工程量 != 0)
+                    {
                         d.定额单价 = d.定额合价 / d.定额工程量;
+                    }
                 }
             }
 
-            // 3. 计算清单层级
+            // 3. 顶层：汇总所有定额到清单
+            // 把该清单下所有定额对象的“定额合价”进行总计
             qingdan.综合合价 = dinge.Sum(d => d.定额合价);
+
+            // 计算清单综合单价：综合合价 / 清单工程量
             if (qingdan.工程量 != 0)
+            {
                 qingdan.综合单价 = qingdan.综合合价 / qingdan.工程量;
+            }
         }
     }
 }
