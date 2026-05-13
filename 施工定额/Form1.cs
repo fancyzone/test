@@ -1,6 +1,5 @@
 using System.Data;
 using System.Data.Common;
-using System.Data.Entity.Core.Common.CommandTrees.ExpressionBuilder;
 using System.Data.SQLite;
 using static 施工定额.Program;
 
@@ -8,6 +7,8 @@ namespace 施工定额
 {
     public partial class Form1 : Form
     {
+        private string connectionString = "Data Source=userDB.db;Version=3;";
+
         public Form1()
         {
             InitializeComponent();
@@ -30,40 +31,13 @@ namespace 施工定额
         {
             if (s == "qingdan")
             {
-                // 从更新清单显示
-                List<Qingdan> qingdans = GetQingdansFromDatabase();
-                dataGridView1.DataSource = qingdans;
+                //更新清单显示
+                dataGridView1.DataSource = DbHelper.QueryList<Qingdan>("SELECT * FROM 清单");
             }
             if (s == "dinge")
             {
                 //更新定额显示
-                string connectionString = "Data Source=userDB.db;Version=3;";
-                SQLiteConnection connection = new(connectionString);
-                SQLiteConnection connection1 = new(connectionString);
-                try
-                {
-                    connection1.Open();
-                    // 在这里可以执行数据库操作，如查询、插入、更新等
-                    // 定义 SQL 查询语句
-                    string query = $"SELECT * FROM 定额_市政工程 WHERE 清单编码 = '{ValueStorage.SharedValue}'";
-                    DataAdapter DA = new SQLiteDataAdapter(query, connection1);
-                    DataSet DS = new();
-                    // 填充数据集
-                    DA.Fill(DS);
-                    // 将数据集绑定到 DataGridView
-                    DataGridView_dinge.DataSource = DS.Tables[0];
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("连接数据库时出错: " + ex.Message);
-                }
-                finally
-                {
-                    if (connection.State == System.Data.ConnectionState.Open)
-                    {
-                        connection.Close();
-                    }
-                }
+                DataGridView_dinge.DataSource = DbHelper.QueryList<Dinge>($"SELECT * FROM 定额_市政工程 WHERE 清单编码 = '{ValueStorage.SharedValue}'");
             }
             if (s == "xiaohaoliang")
             {
@@ -168,126 +142,11 @@ namespace 施工定额
 
         private void UpdateDatabase(QingdanDingeXiaohaoliang QDX)
         {
-            string connectionString = "Data Source=userDB.db;Version=3;";
-            using SQLiteConnection connection = new(connectionString);
-            //更新清单表
-            try
-            {
-                connection.Open();
-                // 构建更新 SQL 语句
-                string updateQuery = "UPDATE 清单 SET 清单名称 = @清单名称, 项目特征 = @项目特征, 单位 = @单位, 工程量 = @工程量, 综合单价 = @综合单价, 综合合价 = @综合合价 WHERE 清单编码 = @清单编码";
-                using SQLiteCommand command = new(updateQuery, connection);
-                command.Parameters.AddWithValue("@清单名称", QDX.qingdan.清单名称);
-                command.Parameters.AddWithValue("@项目特征", QDX.qingdan.项目特征);
-                command.Parameters.AddWithValue("@单位", QDX.qingdan.单位);
-                command.Parameters.AddWithValue("@工程量", QDX.qingdan.工程量.ToString("0.00"));//保留两位小数
-                command.Parameters.AddWithValue("@综合单价", QDX.qingdan.综合单价.ToString("0.00"));
-                command.Parameters.AddWithValue("@综合合价", QDX.qingdan.综合合价.ToString("0.00"));
-                command.Parameters.AddWithValue("@清单编码", QDX.qingdan.清单编码);
-                // 执行更新操作
-                command.ExecuteNonQuery();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"更新数据库时出现错误：{ex.Message}");
-            }
-            //更新定额表
-            try
-            {
-                // 构建更新 SQL 语句
-                foreach (Dinge dinge in QDX.dinge)
-                {
-                    string updateQuery = "UPDATE 定额_市政工程 SET 定额名称 = @定额名称, 定额单位 = @定额单位, 定额工程量 = @定额工程量, 定额单价 = @定额单价, 定额合价 = @定额合价 WHERE 定额编码 = @定额编码 AND 清单编码 = @清单编码 AND ID号 = @ID号";
-                    using SQLiteCommand command = new(updateQuery, connection);
-                    command.Parameters.AddWithValue("@定额名称", dinge.定额名称);
-                    command.Parameters.AddWithValue("@定额单位", dinge.定额单位);
-                    command.Parameters.AddWithValue("@定额工程量", dinge.定额工程量.ToString("F2"));//保留两位小数
-                    command.Parameters.AddWithValue("@定额单价", dinge.定额单价.ToString("F2"));
-                    command.Parameters.AddWithValue("@定额合价", dinge.定额合价.ToString("F2"));
-                    command.Parameters.AddWithValue("@定额编码", dinge.定额编码);
-                    command.Parameters.AddWithValue("@清单编码", QDX.qingdan.清单编码);
-                    command.Parameters.AddWithValue("@ID号", dinge.ID号);
-                    // 执行更新操作
-                    command.ExecuteNonQuery();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"更新数据库时出现错误：{ex.Message}");
-            }
-            //更新消耗量表
-            try
-            {
-                // 构建更新 SQL 语句
-                foreach (Xiaohaoliang xhl in QDX.xiaohaoliang)
-                {
-                    string updateQuery = "UPDATE 消耗量 SET 含量 = @含量, 数量 = @数量, 定额基价 = @定额基价, 市场价 = @市场价, 市场价合计 = @市场价合计 WHERE 定额编码 = @定额编码 AND 清单编码 = @清单编码 AND ID号 = @ID号 AND 消耗量编码 = @消耗量编码 ";
-                    using SQLiteCommand command = new(updateQuery, connection);
-                    command.Parameters.AddWithValue("@含量", xhl.含量.ToString("F4"));//保留四位小数
-                    command.Parameters.AddWithValue("@数量", xhl.数量.ToString("F4"));
-                    command.Parameters.AddWithValue("@定额基价", xhl.定额基价.ToString("F2"));
-                    command.Parameters.AddWithValue("@市场价", xhl.市场价.ToString("F2"));
-                    command.Parameters.AddWithValue("@市场价合计", xhl.市场价合计.ToString("F2"));
-                    command.Parameters.AddWithValue("@定额编码", xhl.定额编码);
-                    command.Parameters.AddWithValue("@清单编码", QDX.qingdan.清单编码);
-                    command.Parameters.AddWithValue("@ID号", xhl.ID号);
-                    command.Parameters.AddWithValue("@消耗量编码", xhl.消耗量编码);
-                    // 执行更新操作
-                    command.ExecuteNonQuery();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"更新数据库时出现错误：{ex.Message}");
-            }
-
-
+            DbHelper.Execute("UPDATE 清单 SET 清单名称 = @清单名称, 项目特征 = @项目特征, 单位 = @单位, 工程量 = @工程量, 综合单价 = @综合单价, 综合合价 = @综合合价 WHERE 清单编码 = @清单编码", QDX.qingdan);
+            DbHelper.Execute($"UPDATE 定额_市政工程 SET 定额名称 = @定额名称, 定额单位 = @定额单位, 定额工程量 = @定额工程量, 定额单价 = @定额单价, 定额合价 = @定额合价 WHERE 定额编码 = @定额编码 AND 清单编码 = {ValueStorage.SharedValue} AND ID号 = @ID号", QDX.dinge);
+            DbHelper.Execute($"UPDATE 消耗量 SET 含量 = @含量, 数量 = @数量, 定额基价 = @定额基价, 市场价 = @市场价, 市场价合计 = @市场价合计 WHERE 定额编码 = @定额编码 AND 清单编码 = {ValueStorage.SharedValue} AND ID号 = @ID号 AND 消耗量编码 = @消耗量编码", QDX.xiaohaoliang);
         }
 
-        /// <summary>
-        /// 从SQLite读取数据并转换为User对象列表
-        /// </summary>
-        /// <returns>User对象列表</returns>
-        private List<Qingdan> GetQingdansFromDatabase()
-        {
-            List<Qingdan> qingdanList = new List<Qingdan>();
-            string connectionString = "Data Source=userDB.db;Version=3;";
-            try
-            {
-                using (SQLiteConnection conn = new SQLiteConnection(connectionString))
-                {
-                    conn.Open();
-                    string querySql = "SELECT 清单编码,清单名称,项目特征,单位,工程量,综合单价,综合合价,Level FROM 清单";
-                    using (SQLiteCommand cmd = new SQLiteCommand(querySql, conn))
-                    {
-                        using (SQLiteDataReader reader = cmd.ExecuteReader())
-                        {
-                            // 遍历查询结果，封装成User对象
-                            while (reader.Read())
-                            {
-                                Qingdan qingdan = new Qingdan
-                                {
-                                    清单编码 = reader["清单编码"].ToString(),
-                                    清单名称 = reader["清单名称"].ToString(),
-                                    项目特征 = reader["项目特征"].ToString(),
-                                    单位 = reader["单位"].ToString(),
-                                    工程量 = Convert.ToDecimal(reader["工程量"]),
-                                    综合单价 = Convert.ToDecimal(reader["综合单价"]),
-                                    综合合价 = Convert.ToDecimal(reader["综合合价"]),
-                                    Level = Convert.ToInt32(reader["Level"])
-                                };
-                                qingdanList.Add(qingdan);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"读取数据失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            return qingdanList;
-        }
         private QingdanDingeXiaohaoliang GetCurrentModel()
         {
             QingdanDingeXiaohaoliang model = new QingdanDingeXiaohaoliang();
@@ -343,7 +202,7 @@ namespace 施工定额
         }
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            //MessageBox.Show("Content被点击");
+
         }
 
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
@@ -393,7 +252,7 @@ namespace 施工定额
                 decimal 不含税工程造价 = 0.0M;
                 try
                 {
-                    string connectionString = "Data Source=userDB.db;Version=3;";
+                    
                     // 使用 using 语句管理 SQLiteConnection
                     using SQLiteConnection connection = new(connectionString);
                     connection.Open();
@@ -441,7 +300,6 @@ namespace 施工定额
             // 当用户点击节点后，获取选中的节点
             TreeNode selectedNode = e.Node;   //一般不会为null
 
-            string connectionString = "Data Source=userDB.db;Version=3;";
             SQLiteConnection connection = new(connectionString);
             try
             {
