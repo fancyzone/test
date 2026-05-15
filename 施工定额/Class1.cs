@@ -64,6 +64,8 @@ namespace 施工定额
         public decimal 综合单价 { get; set; }
         public decimal 综合合价 { get; set; }
         public int Level { get; set; }
+        // 内存树状关联
+        public List<Dinge> 定额列表 { get; set; } = new List<Dinge>();
         public override string ToString()
         {
             return $"{清单编码} - {清单名称} - {项目特征} - {单位} - {工程量} - {综合单价} - {综合合价} - {Level}";
@@ -78,6 +80,8 @@ namespace 施工定额
         public decimal 定额工程量 { get; set; }
         public decimal 定额单价 { get; set; }
         public decimal 定额合价 { get; set; }
+        // 内存树状关联
+        public List<Xiaohaoliang> 消耗量列表 { get; set; } = new List<Xiaohaoliang>();
         public override string ToString()
         {
             return $"{ID号} - {定额编码} - {定额名称} - {定额工程量} - {定额单价} - {定额合价}";
@@ -129,6 +133,6 @@ namespace 施工定额
             {
                 return conn.Execute(sql, param);
             }
-        } 
+        }
     }
 }

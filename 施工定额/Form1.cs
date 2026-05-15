@@ -1,3 +1,4 @@
+using Dapper;
 using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
@@ -8,6 +9,7 @@ namespace 施工定额
     public partial class Form1 : Form
     {
         private string connectionString = "Data Source=userDB.db;Version=3;";
+        private List<Qingdan> myMemoryQingdanList = new List<Qingdan>();
 
         public Form1()
         {
@@ -15,6 +17,8 @@ namespace 施工定额
         }
         private void Form1_Load(object sender, EventArgs e)
         {
+            myMemoryQingdanList = LoadTreeDataToMemory();
+
             // 全局启用换行
             dataGridView1.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
 
@@ -81,7 +85,10 @@ namespace 施工定额
             清单编码 = dataGridView1.Rows[e.RowIndex].Cells["清单编码"].Value.ToString() ?? "";
             // 将值存储到静态变量中
             ValueStorage.SharedValue = 清单编码;
-            UpdateDisplay("dinge");
+
+            // 当点击清单时，直接去内存列表里过滤
+            var currentQd = myMemoryQingdanList.FirstOrDefault(q => q.清单编码 == ValueStorage.SharedValue);
+            DataGridView_dinge.DataSource = currentQd.定额列表; // 秒开，完全不卡
             //清空消耗量显示
             // 第一步：解除数据源绑定（核心）
             dataGridView2.DataSource = null;
@@ -252,7 +259,7 @@ namespace 施工定额
                 decimal 不含税工程造价 = 0.0M;
                 try
                 {
-                    
+
                     // 使用 using 语句管理 SQLiteConnection
                     using SQLiteConnection connection = new(connectionString);
                     connection.Open();
@@ -370,6 +377,49 @@ namespace 施工定额
             ValueStorage.SharedValue2 = 定额编码;
             ValueStorage.SharedValue3 = ID号;
             UpdateDisplay("xiaohaoliang");
+        }
+        public static List<Qingdan> LoadTreeDataToMemory()
+        {
+            string sql = @"
+            SELECT * FROM 清单;
+            SELECT * FROM 定额_市政工程;
+            SELECT * FROM 消耗量;";
+
+            using (var conn = new SQLiteConnection("Data Source=userDB.db;Version=3;"))
+            {
+                using (var multi = conn.QueryMultiple(sql))
+                {
+                    var qingdanList = multi.Read<Qingdan>().ToList();
+                    var dingeList = multi.Read<Dinge>().ToList();
+                    var xiaohaoliangList = multi.Read<Xiaohaoliang>().ToList();
+
+                    // 1. 消耗量按【ID号】分组（Lookup类似于超快的只读字典）
+                    var xhlLookup = xiaohaoliangList.ToLookup(x => x.ID号);
+
+                    // 2. 先把【消耗量】全部塞进对应的【定额】里（这一步至关重要！）
+                    foreach (var dg in dingeList)
+                    {
+                        // 根据 ID号 匹配，把属于该定额的消耗量全部倒进去
+                        dg.消耗量列表 = xhlLookup[dg.ID号].ToList();
+                        // 注意：如果你的 Dinge 类里定义的属性叫“消耗量列表”，这里记得改成 dg.消耗量列表
+                    }
+
+                    // 3. 再按【清单编码】将已经装好消耗量的【定额】进行分组
+                    // 借用消耗量的关系（因为你的消耗量表里同时有“清单编码”和“定额编码”）
+                    var dingeLookup = dingeList.ToLookup(d => {
+                        var sampleXhl = xiaohaoliangList.FirstOrDefault(x => x.ID号 == d.ID号);
+                        return sampleXhl?.清单编码 ?? "";
+                    });
+
+                    // 4. 最后把定额列表塞进清单
+                    foreach (var qd in qingdanList)
+                    {
+                        qd.定额列表 = dingeLookup[qd.清单编码].ToList();
+                    }
+
+                    return qingdanList;
+                }
+            }
         }
     }
 }
